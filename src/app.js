@@ -30,7 +30,7 @@ const participantsSchema = joi.object({
 app.post("/participants", async (req, res) => {
   const { name } = req.body;
 
-  const name_validation = participantsSchema.validate({req.body}, {
+  const name_validation = participantsSchema.validate({name}, {
     abortEarly: false,
   });
 
@@ -63,7 +63,7 @@ app.post("/participants", async (req, res) => {
     });
 
     res.sendStatus(201);
-    
+
   } catch (error) {
     res.sendStatus(500).send(error.message);
   }
