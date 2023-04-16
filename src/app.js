@@ -6,7 +6,7 @@ import joi from "joi";
 import dayjs from "dayjs";
 
 const INTERVAL_TIMER = 15000;
-const IMPERMANENCE_POINT = 10000;
+const IMPERMANENCE_THRESHOLD = 10000;
 const TRUE = 1;
 
 const app = express();
@@ -187,18 +187,22 @@ app.post("/status", async (req, res) => {
 setInterval(async () => {
   const inactives = await db
     .collection("participants")
-    .find({ lastStatus: { $lt: Date.now() - IMPERMANENCE_POINT } })
+    .find({ lastStatus: { $lt: Date.now() - IMPERMANENCE_THRESHOLD } })
     .toArray();
 
-  //Para cada participante removido, salve uma nova mensagem no banco, no formato:
-  /*{ 
-	from: 'xxx',
-	to: 'Todos',
-	text: 'sai da sala...',
-	type: 'status',
-	time: 'HH:mm:ss'}*/
+  await db
+    .collection("participants")
+    .deleteMany({ lastStatus: { $lt: Date.now() - IMPERMANENCE_THRESHOLD } });
 
-  console.log(inactives);
+  inactives.map(async (element) => {
+    await db.collection("messages").insertOne({
+      from: element.name,
+      to: "Todos",
+      text: "sai da sala...",
+      type: "status",
+      time: Date.now(),
+    });
+  });
   return;
 }, INTERVAL_TIMER);
 
