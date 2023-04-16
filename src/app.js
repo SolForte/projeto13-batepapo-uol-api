@@ -61,12 +61,12 @@ app.post("/participants", async (req, res) => {
       type: "status",
       time: dayjs().format("HH:mm:ss"),
     });
-
-    res.sendStatus(201);
-    return;
   } catch (error) {
     res.sendStatus(500).send(error.message);
   }
+
+  res.sendStatus(201);
+  return;
 });
 
 // Route: GET "/participants"
