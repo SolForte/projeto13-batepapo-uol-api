@@ -48,11 +48,11 @@ app.post("/participants", async (req, res) => {
   }
 
   try {
-    const name_uniqueness = await db
+    const nameUniqueness = await db
       .collection("participants")
       .findOne({ name: name });
 
-    if (name_uniqueness) {
+    if (nameUniqueness) {
       res.sendStatus(409);
       return;
     }
