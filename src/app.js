@@ -3,8 +3,8 @@ import cors from "cors";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
 import joi from "joi";
+import dayjs from "dayjs"
 
-// Criação do servidor
 const app = express();
 
 // Configurações
@@ -22,7 +22,6 @@ mongoClient
 
 // Padrões para validação
 const MINIMUM = 1;
-
 const participantSchema = joi.object({
   name: joi.string().min(MINIMUM).required(),
 });
@@ -35,7 +34,7 @@ const limitSchema = joi.object({
   limit: joi.number().integer().min(MINIMUM),
 });
 
-// Route: POST "/participants"
+// Route: POST "/participants" ===============================================================================
 app.post("/participants", async (req, res) => {
   const { name } = req.body;
 
@@ -51,17 +50,19 @@ app.post("/participants", async (req, res) => {
   try {
     const name_uniqueness = await db
       .collection("participants")
-      .findOne({ name });
+      .findOne({ name: name });
 
     if (name_uniqueness) {
       res.sendStatus(409);
       return;
     }
 
-    await db.collection("participants").insertOne({
+    const participant = {
       name,
       lastStatus: Date.now(),
-    });
+    };
+
+    await db.collection("participants").insertOne(participant);
 
     await db.collection("messages").insertOne({
       from: name,
@@ -72,22 +73,24 @@ app.post("/participants", async (req, res) => {
     });
 
     res.sendStatus(201);
+    return;
   } catch (error) {
-    res.sendStatus(500).send(error.message);
+    res.status(500).send(error.message);
+    return;
   }
 });
 
-// Route: GET "/participants"
+// Route: GET "/participants" ===============================================================================
 app.get("/participants", async (req, res) => {
   try {
     const participants = await db.collection("participants").find().toArray();
     res.status(200).send(participants);
   } catch (error) {
-    res.sendStatus(500).send(error.message);
+    res.status(500).send(error.message);
   }
 });
 
-// Route: POST "/messages"
+// Route: POST "/messages" ===============================================================================
 app.post("/messages", async (req, res) => {
   const { to, text, type } = req.body;
   const { user } = req.headers;
@@ -125,7 +128,7 @@ app.post("/messages", async (req, res) => {
   }
 });
 
-// Route: GET "/messages"
+// Route: GET "/messages" ===============================================================================
 app.get("/messages", async (req, res) => {
   const { limit } = req.query;
   const { user } = req.headers;
@@ -158,7 +161,7 @@ app.get("/messages", async (req, res) => {
   }
 });
 
-// Route: POST "/status"
+// Route: POST "/status" ===============================================================================
 app.post("/status", async (req, res) => {
   const { user } = req.headers;
 
