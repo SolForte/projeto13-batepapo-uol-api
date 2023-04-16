@@ -21,15 +21,18 @@ mongoClient
   .catch((erro) => console.log(erro.message));
 
 // Padrões para validação
-const MINIMUM_LENGTH = 1;
+const MINIMUM = 1;
 
 const participantSchema = joi.object({
-  name: joi.string().min(MINIMUM_LENGTH).required(),
+  name: joi.string().min(MINIMUM).required(),
 });
 const messageSchema = joi.object({
-  to: joi.string().min(MINIMUM_LENGTH).required(),
-  text: joi.string().min(MINIMUM_LENGTH).required(),
+  to: joi.string().min(MINIMUM).required(),
+  text: joi.string().min(MINIMUM).required(),
   type: joi.string().valid("message", "private_message").required(),
+});
+const limitSchema = joi.object({
+  limit: joi.number().integer().min(MINIMUM),
 });
 
 // Route: POST "/participants"
@@ -123,7 +126,37 @@ app.post("/messages", async (req, res) => {
 });
 
 // Route: GET "/messages"
-app.get("/messages", async (req, res) => {});
+app.get("/messages", async (req, res) => {
+  const { limit } = req.query;
+  const { user } = req.headers;
+
+  try {
+    const messages = await db
+      .collection("messages")
+      .find({
+        $or: [{ to: "Todos" }, { to: user }, { from: user }],
+      })
+      .toArray();
+
+    if (limit) {
+      const validation = limitSchema.validate(
+        { limit },
+        {
+          abortEarly: false,
+        }
+      );
+
+      if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        res.status(422).send(errors);
+        return;
+      }
+    }
+    res.status(200).send(messages.slice(-limit));
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
 
 // Route: POST "/messages"
 app.post("/status", async (req, res) => {});
