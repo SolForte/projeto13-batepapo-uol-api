@@ -3,7 +3,7 @@ import cors from "cors";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
 import joi from "joi";
-import dayjs from "dayjs"
+import dayjs from "dayjs";
 
 const app = express();
 
@@ -188,6 +188,26 @@ app.post("/status", async (req, res) => {
     res.status(500).send(error.message);
   }
 });
+
+// Remoção automática de usuários inativos
+
+//A cada 15 segundos, remova da lista de participantes os participantes que possuam um lastStatus de mais de 10 segundos atrás.
+const INTERVAL_TIMER = 15000;
+const IMPERMANENCE_POINT = 10000;
+setInterval(purgeParticipants, INTERVAL_TIMER)
+async function purgeParticipants(){
+  return
+} 
+//Dica: você pode usar setInterval no arquivo do seu servidor. Procure por Query Selectors do MongoDB que te ajudem na filtragem.
+
+//Para cada participante removido, salve uma nova mensagem no banco, no formato:
+/*{ 
+	from: 'xxx',
+	to: 'Todos',
+	text: 'sai da sala...',
+	type: 'status',
+	time: 'HH:mm:ss'
+}*/
 
 // Deixa o app escutando, à espera de requisições
 const PORT = 5000;
