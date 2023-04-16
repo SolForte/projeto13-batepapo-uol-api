@@ -70,7 +70,14 @@ app.post("/participants", async (req, res) => {
 });
 
 // Route: GET "/participants"
-app.get("/participants", async (req, res) => {});
+app.get("/participants", async (req, res) => {
+  try {
+    const participants = await db.collection("participants").find().toArray();
+    res.status(200).send(participants);
+  } catch (error) {
+    res.sendStatus(500).send(error.message);
+  }
+});
 
 // Route: POST "/messages"
 app.post("/messages", async (req, res) => {});
