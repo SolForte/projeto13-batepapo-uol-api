@@ -59,7 +59,7 @@ app.post("/participants", async (req, res) => {
       to: "Todos",
       text: "entra na sala...",
       type: "status",
-      time: dayjs().format("HH:mm:ss"),
+      time: dayjs().format("HH:mm:ss")
     });
 
     res.sendStatus(201);
@@ -80,7 +80,16 @@ app.get("/participants", async (req, res) => {
 });
 
 // Route: POST "/messages"
-app.post("/messages", async (req, res) => {});
+app.post("/messages", async (req, res) => {
+    const {to, text, type} = req.body
+
+    const from = req.headers.user
+
+
+
+
+
+});
 
 // Route: GET "/messages"
 app.get("/messages", async (req, res) => {});
