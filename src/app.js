@@ -106,11 +106,11 @@ app.post("/messages", async (req, res) => {
   }
 
   try {
-    const name_existance = await db
+    const nameExistance = await db
       .collection("participants")
       .findOne({ name: user });
 
-    if (!name_existance) {
+    if (!nameExistance) {
       res.sendStatus(422);
       return;
     }
