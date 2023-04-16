@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
+import joi from "joi";
 
 // Criação do servidor
 const app = express();
@@ -19,19 +20,67 @@ mongoClient
   .then(() => (db = mongoClient.db()))
   .catch((err) => console.log(err.message));
 
-const PARTICIPANTE_TEMPLATE = {name: 'João', lastStatus: 12313123};
-const MESSAGE_TEMPLATE = {from: 'João', to: 'Todos', text: 'oi galera', type: 'message', time: '20:04:37'};
+// Padrão para validação
+const MINIMUM_NAME_SIZE = 1;
+const participantsSchema = joi.object({
+  name: joi.string().min(MINIMUM_NAME_SIZE).required(),
+});
 
-app.post("/participants", async (req, res) => {})
+// Route: POST "/participants"
+app.post("/participants", async (req, res) => {
+  const { name } = req.body;
 
-app.get("/participants", async (req, res) => {})
+  const name_validation = participantsSchema.validate(red.body, {
+    abortEarly: false,
+  });
 
-app.post("/messages", async (req, res) => {})
+  if (name_validation.error) {
+    res.sendStatus(422);
+    return;
+  }
 
-app.get("/messages", async (req, res) => {})
+  try {
+    const name_uniqueness = await db
+      .collection("participants")
+      .findOne({ name });
 
-app.post("/status", async (req, res) => {})
+    if (name_uniqueness) {
+      res.sendStatus(409);
+      return;
+    }
 
-  // Deixa o app escutando, à espera de requisições
+    await db.collection("participants").insertOne({
+      name: name,
+      lastStatus: Date.now(),
+    });
+
+    await db.collection("messages").insertOne({
+      from: name,
+      to: "Todos",
+      text: "entra na sala...",
+      type: "status",
+      time: dayjs().format("HH:mm:ss"),
+    });
+
+    res.sendStatus(201);
+    return;
+  } catch (error) {
+    res.sendStatus(500).send(error.message);
+  }
+});
+
+// Route: GET "/participants"
+app.get("/participants", async (req, res) => {});
+
+// Route: POST "/messages"
+app.post("/messages", async (req, res) => {});
+
+// Route: GET "/messages"
+app.get("/messages", async (req, res) => {});
+
+// Route: POST "/messages"
+app.post("/status", async (req, res) => {});
+
+// Deixa o app escutando, à espera de requisições
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
