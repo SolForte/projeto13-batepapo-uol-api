@@ -158,8 +158,33 @@ app.get("/messages", async (req, res) => {
   }
 });
 
-// Route: POST "/messages"
-app.post("/status", async (req, res) => {});
+// Route: POST "/status"
+app.post("/status", async (req, res) => {
+  const { user } = req.headers;
+
+  if (!user) {
+    res.sendStatus(404);
+  }
+
+  try {
+    const existence = await db
+      .collection("participants")
+      .findOne({ name: user });
+
+    if (!existence) {
+      res.sendStatus(404);
+      return;
+    }
+
+    db.collection("participants").updateOne(existence, {
+      $set: { lastStatus: Date.now() },
+    });
+
+    res.sendStatus(200);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
 
 // Deixa o app escutando, à espera de requisições
 const PORT = 5000;
