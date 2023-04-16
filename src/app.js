@@ -5,14 +5,16 @@ import dotenv from "dotenv";
 import joi from "joi";
 import dayjs from "dayjs";
 
+const INTERVAL_TIMER = 15000;
+const IMPERMANENCE_POINT = 10000;
+const TRUE = 1;
+
 const app = express();
 
-// Configurações
 app.use(express.json());
 app.use(cors());
 dotenv.config();
 
-// Setup do Banco de Dados
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 let db;
 mongoClient
@@ -20,21 +22,18 @@ mongoClient
   .then(() => (db = mongoClient.db()))
   .catch((erro) => console.log(erro.message));
 
-// Padrões para validação
-const MINIMUM = 1;
 const participantSchema = joi.object({
-  name: joi.string().min(MINIMUM).required(),
+  name: joi.string().min(TRUE).required(),
 });
 const messageSchema = joi.object({
-  to: joi.string().min(MINIMUM).required(),
-  text: joi.string().min(MINIMUM).required(),
+  to: joi.string().min(TRUE).required(),
+  text: joi.string().min(TRUE).required(),
   type: joi.string().valid("message", "private_message").required(),
 });
 const limitSchema = joi.object({
-  limit: joi.number().integer().min(MINIMUM),
+  limit: joi.number().integer().min(TRUE),
 });
 
-// Route: POST "/participants" ===============================================================================
 app.post("/participants", async (req, res) => {
   const { name } = req.body;
 
@@ -80,7 +79,6 @@ app.post("/participants", async (req, res) => {
   }
 });
 
-// Route: GET "/participants" ===============================================================================
 app.get("/participants", async (req, res) => {
   try {
     const participants = await db.collection("participants").find().toArray();
@@ -90,7 +88,6 @@ app.get("/participants", async (req, res) => {
   }
 });
 
-// Route: POST "/messages" ===============================================================================
 app.post("/messages", async (req, res) => {
   const { to, text, type } = req.body;
   const { user } = req.headers;
@@ -128,7 +125,6 @@ app.post("/messages", async (req, res) => {
   }
 });
 
-// Route: GET "/messages" ===============================================================================
 app.get("/messages", async (req, res) => {
   const { limit } = req.query;
   const { user } = req.headers;
@@ -161,7 +157,6 @@ app.get("/messages", async (req, res) => {
   }
 });
 
-// Route: POST "/status" ===============================================================================
 app.post("/status", async (req, res) => {
   const { user } = req.headers;
 
@@ -189,26 +184,23 @@ app.post("/status", async (req, res) => {
   }
 });
 
-// Remoção automática de usuários inativos
+setInterval(async () => {
+  const inactives = await db
+    .collection("participants")
+    .find({ lastStatus: { $lt: Date.now() - IMPERMANENCE_POINT } })
+    .toArray();
 
-//A cada 15 segundos, remova da lista de participantes os participantes que possuam um lastStatus de mais de 10 segundos atrás.
-const INTERVAL_TIMER = 15000;
-const IMPERMANENCE_POINT = 10000;
-setInterval(purgeParticipants, INTERVAL_TIMER)
-async function purgeParticipants(){
-  return
-} 
-//Dica: você pode usar setInterval no arquivo do seu servidor. Procure por Query Selectors do MongoDB que te ajudem na filtragem.
-
-//Para cada participante removido, salve uma nova mensagem no banco, no formato:
-/*{ 
+  //Para cada participante removido, salve uma nova mensagem no banco, no formato:
+  /*{ 
 	from: 'xxx',
 	to: 'Todos',
 	text: 'sai da sala...',
 	type: 'status',
-	time: 'HH:mm:ss'
-}*/
+	time: 'HH:mm:ss'}*/
 
-// Deixa o app escutando, à espera de requisições
+  console.log(inactives);
+  return;
+}, INTERVAL_TIMER);
+
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
