@@ -30,7 +30,7 @@ const participantsSchema = joi.object({
 app.post("/participants", async (req, res) => {
   const { name } = req.body;
 
-  const name_validation = participantsSchema.validate(red.body, {
+  const name_validation = participantsSchema.validate(req.body, {
     abortEarly: false,
   });
 
